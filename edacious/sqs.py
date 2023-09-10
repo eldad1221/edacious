@@ -1,6 +1,5 @@
 import boto3
 import edacious
-from os import getenv
 
 # Create SQS client
 sqs = boto3.client('sqs')
@@ -16,13 +15,13 @@ class EventListener(edacious.EventListener):
         :return:
         """
 
-        self.sqs_url = kwargs.get('sqs_url')
+        self._sqs_url = kwargs.get('sqs_url')
         self._visibility_timeout = kwargs.get('visibility_timeout')
         super().__init__(*args, **kwargs)
 
     def fetch(self) -> list:
         response = sqs.receive_message(
-            QueueUrl=self.sqs_url,
+            QueueUrl=self._sqs_url,
             AttributeNames=[
                 'SentTimestamp'
             ],
@@ -44,6 +43,6 @@ class EventListener(edacious.EventListener):
         # Delete received message from queue
         receipt_handle = event['ReceiptHandle']
         sqs.delete_message(
-            QueueUrl=self.sqs_url,
+            QueueUrl=self._sqs_url,
             ReceiptHandle=receipt_handle
         )

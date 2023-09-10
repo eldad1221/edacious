@@ -1,3 +1,4 @@
+from quickbelog import Log
 from inspect import getfullargspec
 from abc import ABC, abstractmethod
 
@@ -14,7 +15,7 @@ class EventListener(ABC):
         pass
 
     @abstractmethod
-    def event_handling_error(self):
+    def event_handling_error(self, event: dict):
         pass
 
     @abstractmethod
@@ -25,7 +26,11 @@ class EventListener(ABC):
         while self._run_switch:
             for event in self.fetch():
                 event_type = event[EVENT_TYPE_KEY]
-                event_processing(event_type=event_type, event=event)
+                try:
+                    event_processing(event_type=event_type, event=event)
+                except Exception as ex:
+                    Log.exception(f'Processing event type {event_type} failed with {ex}')
+                    self.event_handling_error(event=event)
 
 
 EVENT_TYPE_HANDLERS = {}
