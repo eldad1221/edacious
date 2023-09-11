@@ -1,5 +1,7 @@
+import json
 import boto3
 import edacious
+from quickbelog import Log
 
 # Create SQS client
 sqs = boto3.client('sqs')
@@ -25,15 +27,29 @@ class EventListener(edacious.EventListener):
                 'SentTimestamp'
             ],
             MaxNumberOfMessages=1,
-            MessageAttributeNames=[
-                'event-type'
-            ],
+            MessageAttributeNames=['All'],
             VisibilityTimeout=self._visibility_timeout,
             WaitTimeSeconds=0
         )
 
         if 'Messages' in response:
-            return response['Messages']
+            events = []
+            for msg in response['Messages']:
+
+                try:
+                    event = json.loads(msg.get('Body'))
+                    event.update(msg.get('MessageAttributeNames', {}))
+                    event[edacious.EVENT_TYPE_KEY] = msg.get(
+                        'MessageAttributes',
+                        {}
+                    ).get(edacious.EVENT_TYPE_KEY, {}).get('StringValue')
+                    event['ReceiptHandle'] = msg['ReceiptHandle']
+                    events.append(event)
+                except json.JSONDecodeError:
+                    Log.warning(f'Can not parse message body. Got {msg.get("Body")}')
+            return events
+        else:
+            return []
 
     def event_handling_error(self, event: dict):
         pass
