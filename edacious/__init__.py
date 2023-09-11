@@ -7,7 +7,7 @@ EVENT_TYPE_KEY = 'event-type'
 
 class EventListener(ABC):
 
-    def __int__(self):
+    def __init__(self, *args, **kwargs):
         self._run_switch = True
 
     @abstractmethod
