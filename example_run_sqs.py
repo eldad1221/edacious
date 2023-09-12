@@ -16,6 +16,6 @@ def my_handler(event: dict):
 
 if __name__ == '__main__':
 
-    listener = EventListener(sqs_url=SQS_URL)
+    listener = EventListener(sqs_url=SQS_URL, visibility_timeout=60, max_messages_to_fetch=10)
     listener.set_seconds_to_wait(seconds=0.5)
     listener.run()

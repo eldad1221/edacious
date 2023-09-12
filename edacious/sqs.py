@@ -9,7 +9,7 @@ sqs = boto3.client('sqs')
 
 class EventListener(edacious.EventListener):
 
-    def __init__(self, sqs_url: str, visibility_timeout: int = 0):
+    def __init__(self, sqs_url: str, visibility_timeout: int = 0, max_messages_to_fetch: int = 10):
         """
         :param sqs_url: AWS SQS url
         :param visibility_timeout: Visibility timeout when receiving messages is seconds
@@ -18,6 +18,7 @@ class EventListener(edacious.EventListener):
 
         self._sqs_url = sqs_url
         self._visibility_timeout = visibility_timeout
+        self._max_messages_to_fetch = max_messages_to_fetch
         super().__init__(tuple(), {})
 
     def fetch(self) -> list:
@@ -26,7 +27,7 @@ class EventListener(edacious.EventListener):
             AttributeNames=[
                 'SentTimestamp'
             ],
-            MaxNumberOfMessages=1,
+            MaxNumberOfMessages=self._max_messages_to_fetch,
             MessageAttributeNames=['All'],
             VisibilityTimeout=self._visibility_timeout,
             WaitTimeSeconds=0
@@ -46,7 +47,7 @@ class EventListener(edacious.EventListener):
                     event['ReceiptHandle'] = msg['ReceiptHandle']
                     events.append(event)
                 except json.JSONDecodeError:
-                    Log.warning(f'Can not parse message body. Got {msg.get("Body")}')
+                    Log.warning(f'Can not parse message body, ignoring this message. Got {msg.get("Body")}')
             return events
         else:
             return []
