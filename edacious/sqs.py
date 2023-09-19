@@ -8,6 +8,8 @@ sqs = boto3.client('sqs')
 
 MESSAGE_ATTRIBUTE_NAMES = 'MessageAttributeNames'
 MESSAGE_ATTRIBUTES = 'MessageAttributes'
+EVENT_BODY = 'Body'
+EVENT_BODY_MESSAGE = 'Message'
 
 
 class EventListener(edacious.EventListener):
@@ -42,8 +44,8 @@ class EventListener(edacious.EventListener):
             for msg in response['Messages']:
 
                 try:
-                    event = json.loads(msg.get('Body'))
-                    event_type = self.get_event_type(msg=msg)
+                    event = self.get_event_body(msg=msg)
+                    event_type = self.get_event_type(msg=msg, body=event)
                     if event_type is not None:
                         event[edacious.EVENT_TYPE_KEY] = event_type
                     event['ReceiptHandle'] = msg['ReceiptHandle']
@@ -55,15 +57,27 @@ class EventListener(edacious.EventListener):
             return []
 
     @staticmethod
-    def get_event_type(msg: dict) -> str:
+    def get_event_body(msg: dict) -> dict:
+        even_body = msg.get(EVENT_BODY, {})
+        if EVENT_BODY_MESSAGE in even_body:
+            even_body = even_body.get(EVENT_BODY_MESSAGE)
+
+        if isinstance(even_body, str):
+            even_body = json.loads(even_body)
+
+        return even_body
+
+    @staticmethod
+    def get_event_type(msg: dict, body: dict) -> str:
         even_type = None
-        if MESSAGE_ATTRIBUTE_NAMES in msg:
+        if edacious.EVENT_TYPE_KEY in body:
+            even_type = body.get(edacious.EVENT_TYPE_KEY)
+        elif MESSAGE_ATTRIBUTE_NAMES in msg:
             even_type = msg.get(
                         'MessageAttributes',
                         {}
                     ).get(edacious.EVENT_TYPE_KEY, {}).get('StringValue')
         else:
-            body = msg.get('Body', {})
             if isinstance(body, str):
                 body = json.loads(body)
             if MESSAGE_ATTRIBUTES in body:
