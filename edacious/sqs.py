@@ -45,7 +45,7 @@ class EventListener(edacious.EventListener):
 
                 try:
                     event = self.get_event_body(msg=msg)
-                    event_type = self.get_event_type(msg=msg, body=event)
+                    event_type = self.get_event_type(msg=msg, event=event)
                     if event_type is not None:
                         event[edacious.EVENT_TYPE_KEY] = event_type
                     event['ReceiptHandle'] = msg['ReceiptHandle']
@@ -71,20 +71,21 @@ class EventListener(edacious.EventListener):
         return even_body
 
     @staticmethod
-    def get_event_type(msg: dict, body: dict) -> str:
+    def get_event_type(msg: dict, event: dict) -> str:
         even_type = None
-        if edacious.EVENT_TYPE_KEY in body:
-            even_type = body.get(edacious.EVENT_TYPE_KEY)
+        if edacious.EVENT_TYPE_KEY in event:
+            even_type = event.get(edacious.EVENT_TYPE_KEY)
         elif MESSAGE_ATTRIBUTE_NAMES in msg:
             even_type = msg.get(
                         'MessageAttributes',
                         {}
                     ).get(edacious.EVENT_TYPE_KEY, {}).get('StringValue')
         else:
-            if isinstance(body, str):
-                body = json.loads(body)
-            if MESSAGE_ATTRIBUTES in body:
-                even_type = body.get('MessageAttributes', {}).get(edacious.EVENT_TYPE_KEY, {}).get('Value')
+            msg_body = msg.get(EVENT_BODY, {})
+            if isinstance(msg_body, str):
+                msg_body = json.loads(msg_body)
+            if MESSAGE_ATTRIBUTES in msg_body:
+                even_type = msg_body.get('MessageAttributes', {}).get(edacious.EVENT_TYPE_KEY, {}).get('Value')
         return even_type
 
     def event_handling_error(self, event: dict):
