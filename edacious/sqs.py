@@ -43,7 +43,9 @@ class EventListener(edacious.EventListener):
 
                 try:
                     event = json.loads(msg.get('Body'))
-                    event[edacious.EVENT_TYPE_KEY] = self.get_event_type(msg=msg)
+                    event_type = self.get_event_type(msg=msg)
+                    if event_type is not None:
+                        event[edacious.EVENT_TYPE_KEY] = event_type
                     event['ReceiptHandle'] = msg['ReceiptHandle']
                     events.append(event)
                 except json.JSONDecodeError:
@@ -60,11 +62,12 @@ class EventListener(edacious.EventListener):
                         'MessageAttributes',
                         {}
                     ).get(edacious.EVENT_TYPE_KEY, {}).get('StringValue')
-        elif MESSAGE_ATTRIBUTES in msg.get('Body', {}):
-            even_type = msg.get(
-                'MessageAttributes',
-                {}
-            ).get(edacious.EVENT_TYPE_KEY, {}).get('Value')
+        else:
+            body = msg.get('Body', {})
+            if isinstance(body, str):
+                body = json.loads(body)
+            if MESSAGE_ATTRIBUTES in body:
+                even_type = body.get('MessageAttributes', {}).get(edacious.EVENT_TYPE_KEY, {}).get('Value')
         return even_type
 
     def event_handling_error(self, event: dict):
