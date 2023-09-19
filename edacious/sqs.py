@@ -59,6 +59,9 @@ class EventListener(edacious.EventListener):
     @staticmethod
     def get_event_body(msg: dict) -> dict:
         even_body = msg.get(EVENT_BODY, {})
+        if isinstance(even_body, str):
+            even_body = json.loads(even_body)
+
         if EVENT_BODY_MESSAGE in even_body:
             even_body = even_body.get(EVENT_BODY_MESSAGE)
 
