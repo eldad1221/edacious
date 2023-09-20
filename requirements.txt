@@ -1,4 +1,5 @@
 boto3
+flask
 redis
 redis-streams
 quickbelog

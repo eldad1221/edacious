@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="edacious",
-    version="0.0.9",
+    version="0.0.10",
     author="Eldad Bishari",
     author_email="eldad@1221tlv.org",
     description="Edacious an Event Derive Architecture framework",
@@ -16,6 +16,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'quickbelog>=1.1.0',
+        'flask>=2.0.0'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

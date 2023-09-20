@@ -1,18 +1,27 @@
 import asyncio
+import threading
 from time import sleep
 from quickbelog import Log
+from datetime import datetime
 from inspect import getfullargspec
 from abc import ABC, abstractmethod
+from flask import Flask
 
 EVENT_TYPE_KEY = 'event-type'
 EVENT_ID_KEY = 'event-id'
+
+app = Flask(__name__)
+
+EVENT_TYPE_HANDLERS = {}
+EVENT_COUNT = 0
+LISTENER_SW_ID = 'No ID'
 
 
 class EventListener(ABC):
 
     def __init__(self, *args, **kwargs):
         self._event_count = 0
-        self._seconds_to_wait = 1
+        self._seconds_to_wait = kwargs.get('seconds_to_wait', 5)
         self._run_switch = True
 
     def get_event_count(self) -> int:
@@ -40,6 +49,8 @@ class EventListener(ABC):
         event_processing(event_type=event_type, event=event)
         self.event_handling_done(event=event)
         self._event_count += 1
+        global EVENT_COUNT
+        EVENT_COUNT += 1
 
     async def process_all_events(self, events: list):
         for event in events:
@@ -55,13 +66,38 @@ class EventListener(ABC):
             else:
                 Log.warning(f'Event does not have event-type attribute {event}')
 
-    def run(self):
-        while self._run_switch:
-            asyncio.run(self.process_all_events(events=self.fetch()))
-            sleep(1)
+    def run(self, run_api: bool = False, api_port: int = 8888):
+        def infinity_loop():
+            global LISTENER_SW_ID
+            LISTENER_SW_ID = Log.start_stopwatch(msg='Starting event listener')
+            while self._run_switch:
+                asyncio.run(self.process_all_events(events=self.fetch()))
+                sleep(1)
+        if run_api:
 
+            listener_thread = threading.Thread(target=infinity_loop, name="event-listener")
+            listener_thread.start()
+            app.run(host="0.0.0.0", port=api_port)
+            listener_thread.join()
+        else:
+            infinity_loop()
 
-EVENT_TYPE_HANDLERS = {}
+    @staticmethod
+    @app.route("/")
+    @app.route("/health")
+    def api_health_check():
+        return {"time": datetime.utcnow(), "status": 'OK'}
+
+    @staticmethod
+    @app.route("/status")
+    def api_status():
+        return {
+            "uptime": Log.stopwatch_seconds(stopwatch_id=LISTENER_SW_ID, print_it=False),
+            "handlers": {k: [f.__qualname__ for f in funcs] for k, funcs in EVENT_TYPE_HANDLERS.items()},
+            "event_count": EVENT_COUNT,
+            "time": datetime.utcnow(),
+            "status": 'OK'
+        }
 
 
 def register_handler(event_type: str, func):

@@ -14,7 +14,7 @@ EVENT_BODY_MESSAGE = 'Message'
 
 class EventListener(edacious.EventListener):
 
-    def __init__(self, sqs_url: str, visibility_timeout: int = 0, max_messages_to_fetch: int = 10):
+    def __init__(self, sqs_url: str, visibility_timeout: int = 3, max_messages_to_fetch: int = 10):
         """
         :param sqs_url: AWS SQS url
         :param visibility_timeout: Visibility timeout when receiving messages is seconds
@@ -75,7 +75,7 @@ class EventListener(edacious.EventListener):
         even_type = None
         if edacious.EVENT_TYPE_KEY in event:
             even_type = event.get(edacious.EVENT_TYPE_KEY)
-        elif MESSAGE_ATTRIBUTE_NAMES in msg:
+        elif MESSAGE_ATTRIBUTES in msg:
             even_type = msg.get(
                         'MessageAttributes',
                         {}
