@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="edacious",
-    version="0.0.10",
+    version="0.0.11",
     author="Eldad Bishari",
     author_email="eldad@1221tlv.org",
     description="Edacious an Event Derive Architecture framework",

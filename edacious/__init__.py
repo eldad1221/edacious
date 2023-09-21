@@ -1,16 +1,17 @@
 import asyncio
+import uvicorn
 import threading
 from time import sleep
 from quickbelog import Log
+from fastapi import FastAPI
 from datetime import datetime
 from inspect import getfullargspec
 from abc import ABC, abstractmethod
-from flask import Flask
 
 EVENT_TYPE_KEY = 'event-type'
 EVENT_ID_KEY = 'event-id'
 
-app = Flask(__name__)
+app = FastAPI(title='Event Listener')
 
 EVENT_TYPE_HANDLERS = {}
 EVENT_COUNT = 0
@@ -77,19 +78,19 @@ class EventListener(ABC):
 
             listener_thread = threading.Thread(target=infinity_loop, name="event-listener")
             listener_thread.start()
-            app.run(host="0.0.0.0", port=api_port)
+            uvicorn.run(app=app, host="0.0.0.0", port=api_port)
             listener_thread.join()
         else:
             infinity_loop()
 
     @staticmethod
-    @app.route("/")
-    @app.route("/health")
+    @app.get("/")
+    @app.get("/health")
     def api_health_check():
         return {"time": datetime.utcnow(), "status": 'OK'}
 
     @staticmethod
-    @app.route("/status")
+    @app.get("/status")
     def api_status():
         return {
             "uptime": Log.stopwatch_seconds(stopwatch_id=LISTENER_SW_ID, print_it=False),

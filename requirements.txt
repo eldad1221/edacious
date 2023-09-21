@@ -1,5 +1,6 @@
 boto3
-flask
+fastapi
+uvicorn
 redis
 redis-streams
 quickbelog
